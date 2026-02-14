@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { API_BASE } from '../config'
+import { leadStatusBadge } from '../utils/badges'
 
 const STATUSES = ['NEW', 'CONTACTED', 'INTERESTED', 'COLD', 'REJECTED', 'LOST', 'CONVERTED']
 
@@ -58,23 +59,19 @@ function LeadBoard() {
     <div className="page">
       <div className="page-header">
         <h2>Leads Board</h2>
-        <div className="filters">
-          <Link to="/leads">Back to table</Link>
-          <button type="button" onClick={fetchBoard}>
-            Refresh
-          </button>
+        <div className="toolbar">
+          <Link to="/leads" className="btn-secondary" style={{ textDecoration: 'none' }}>Table view</Link>
+          <button type="button" onClick={fetchBoard} className="btn-secondary">Refresh</button>
         </div>
       </div>
 
       {error && (
         <p className="error">
           {error}{' '}
-          <button type="button" onClick={fetchBoard} className="retry-btn">
-            Retry
-          </button>
+          <button type="button" onClick={fetchBoard} className="retry-btn">Retry</button>
         </p>
       )}
-      {loading && <p>Loading board...</p>}
+      {loading && <p className="small">Loading board…</p>}
 
       {!loading && !error && (
         <div className="lead-board">
@@ -83,7 +80,7 @@ function LeadBoard() {
             return (
               <div key={status} className="lead-column">
                 <div className="lead-column-header">
-                  <span>{status}</span>
+                  <span><span className={`badge ${leadStatusBadge(status)}`}>{status}</span></span>
                   <span className="lead-column-count">{items.length}</span>
                 </div>
                 <div className="lead-column-body">
@@ -101,7 +98,7 @@ function LeadBoard() {
                           : ''}
                       </div>
                       <div className="lead-card-actions">
-                        <Link to={`/leads/${lead.id}`}>Open</Link>
+                        <Link to={`/leads/${lead.id}`}>View</Link>
                         <select
                           value={lead.status}
                           onChange={(e) => changeStatus(lead.id, e.target.value)}

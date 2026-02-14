@@ -66,7 +66,7 @@ function StudentDetail() {
     }
   }
 
-  if (loading) return <p>Loading student...</p>
+  if (loading) return <p className="small">Loading student…</p>
   if (error) {
     return (
       <div className="page">
@@ -81,14 +81,14 @@ function StudentDetail() {
 
   return (
     <div className="page">
-      <button type="button" onClick={() => navigate('/students')}>
+      <button type="button" onClick={() => navigate('/students')} className="btn-back">
         ← Back to Students
       </button>
 
-      <h2>Student Detail</h2>
+      <h2 className="page-header" style={{ marginBottom: '1rem' }}>Student detail</h2>
 
-      <section className="card">
-        <h3>Profile</h3>
+      <section className="section">
+        <h3 className="section-title">Profile</h3>
         <p>
           <strong>Enrollment number:</strong> {s.enrollment_number}
         </p>
@@ -118,10 +118,11 @@ function StudentDetail() {
         </p>
       </section>
 
-      <section className="card">
-        <h3>Payments</h3>
+      <section className="section">
+        <h3 className="section-title">Payments</h3>
         {payments.length === 0 && <p>No payments recorded.</p>}
         {payments.length > 0 && (
+          <div className="table-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -146,11 +147,12 @@ function StudentDetail() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
-      <section className="card">
-        <h3>Attendance</h3>
+      <section className="section">
+        <h3 className="section-title">Attendance</h3>
         {attendance == null && <p>Loading…</p>}
         {attendance != null && (
           <>
@@ -158,6 +160,7 @@ function StudentDetail() {
               <strong>{attendance.percentage}%</strong> ({attendance.present_sessions} / {attendance.total_sessions} sessions)
             </p>
             {attendance.records && attendance.records.length > 0 && (
+              <div className="table-wrapper">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -178,16 +181,18 @@ function StudentDetail() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
             {attendance.records && attendance.records.length === 0 && <p>No attendance records yet.</p>}
           </>
         )}
       </section>
 
-      <section className="card">
-        <h3>Exams</h3>
+      <section className="section">
+        <h3 className="section-title">Exams</h3>
         {exams.length === 0 && <p>No exam results yet.</p>}
         {exams.length > 0 && (
+          <div className="table-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -208,11 +213,12 @@ function StudentDetail() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
-      <section className="card">
-        <h3>Telegram</h3>
+      <section className="section">
+        <h3 className="section-title">Telegram</h3>
         <p>
           <button type="button" className="btn-primary" onClick={handleConnectTelegram}>
             Generate connect link

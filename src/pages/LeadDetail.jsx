@@ -110,7 +110,7 @@ function LeadDetail() {
 
   return (
     <div className="page">
-      <button type="button" onClick={() => navigate('/leads')}>
+      <button type="button" onClick={() => navigate('/leads')} className="btn-back">
         ← Back to Leads
       </button>
 
@@ -151,9 +151,7 @@ function LeadDetail() {
             <option value="LOST">LOST</option>
             <option value="CONVERTED">CONVERTED</option>
           </select>
-          <button type="button" onClick={updateStatus}>
-            Update
-          </button>
+          <button type="button" onClick={updateStatus} className="btn-primary">Update</button>
         </p>
         {statusError && <p className="error">{statusError}</p>}
         {lead.status !== 'CONVERTED' && (
@@ -194,12 +192,8 @@ function LeadDetail() {
             placeholder="Add a note or call summary..."
           />
           <div className="note-actions">
-            <button type="button" onClick={addNote} disabled={!note.trim()}>
-              Add Note
-            </button>
-            <button type="button" onClick={addCallLog} disabled={!note.trim()}>
-              Log call
-            </button>
+            <button type="button" onClick={addNote} disabled={!note.trim()} className="btn-primary">Add note</button>
+            <button type="button" onClick={addCallLog} disabled={!note.trim()} className="btn-secondary">Log call</button>
           </div>
         </div>
         {activities.length === 0 && <p>No activities yet.</p>}

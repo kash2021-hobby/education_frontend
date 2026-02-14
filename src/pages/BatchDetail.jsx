@@ -178,7 +178,7 @@ function BatchDetail() {
     }
   }
 
-  if (loading) return <p>Loading batch...</p>
+  if (loading) return <p className="small">Loading batch…</p>
   if (error) {
     return (
       <div className="page">
@@ -190,24 +190,25 @@ function BatchDetail() {
 
   return (
     <div className="page">
-      <button type="button" onClick={() => navigate('/batches')}>
+      <button type="button" onClick={() => navigate('/batches')} className="btn-back">
         ← Back to Batches
       </button>
 
-      <h2>Batch: {batch.name}</h2>
+      <h2 className="page-header" style={{ marginBottom: '1rem' }}>Batch: {batch.name}</h2>
 
-      <section className="card">
-        <h3>Info</h3>
+      <section className="section">
+        <h3 className="section-title">Info</h3>
         <p><strong>Course:</strong> {batch.course_name}</p>
         <p><strong>Status:</strong> {batch.status}</p>
         <p><strong>Seats:</strong> {batch.current_enrollment} / {batch.max_seats}</p>
         <p><strong>Start date:</strong> {batch.start_date ? new Date(batch.start_date).toLocaleDateString() : '—'}</p>
       </section>
 
-      <section className="card">
-        <h3>Students</h3>
+      <section className="section">
+        <h3 className="section-title">Students</h3>
         {students.length === 0 && <p>No students in this batch.</p>}
         {students.length > 0 && (
+          <div className="table-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -228,11 +229,12 @@ function BatchDetail() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
-      <section className="card">
-        <h3>Attendance</h3>
+      <section className="section">
+        <h3 className="section-title">Attendance</h3>
         <button type="button" className="btn-primary" onClick={() => setSessionModalOpen(true)}>
           New attendance session
         </button>
@@ -241,6 +243,7 @@ function BatchDetail() {
           <div className="sub-form">
             <h4>Mark attendance for this session</h4>
             <form onSubmit={submitAttendance}>
+              <div className="table-wrapper">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -265,9 +268,10 @@ function BatchDetail() {
                   ))}
                 </tbody>
               </table>
+              </div>
               <div className="modal-actions">
-                <button type="button" onClick={() => setPendingSessionId(null)}>Cancel</button>
-                <button type="submit" disabled={submittingAttendance}>
+                <button type="button" onClick={() => setPendingSessionId(null)} className="btn-secondary">Cancel</button>
+                <button type="submit" disabled={submittingAttendance} className="btn-primary">
                   {submittingAttendance ? 'Saving…' : 'Save attendance'}
                 </button>
               </div>
@@ -276,8 +280,8 @@ function BatchDetail() {
         )}
       </section>
 
-      <section className="card">
-        <h3>Exams</h3>
+      <section className="section">
+        <h3 className="section-title">Exams</h3>
         <button type="button" className="btn-primary" onClick={() => setExamModalOpen(true)}>
           New exam
         </button>
@@ -286,6 +290,7 @@ function BatchDetail() {
           <div className="sub-form">
             <h4>Add results for this exam</h4>
             <form onSubmit={submitExamResults}>
+              <div className="table-wrapper">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -325,9 +330,10 @@ function BatchDetail() {
                   ))}
                 </tbody>
               </table>
+              </div>
               <div className="modal-actions">
-                <button type="button" onClick={() => setPendingExamId(null)}>Cancel</button>
-                <button type="submit" disabled={submittingResults}>
+                <button type="button" onClick={() => setPendingExamId(null)} className="btn-secondary">Cancel</button>
+                <button type="submit" disabled={submittingResults} className="btn-primary">
                   {submittingResults ? 'Saving…' : 'Save results'}
                 </button>
               </div>
@@ -392,8 +398,8 @@ function BatchDetail() {
                 />
               </div>
               <div className="modal-actions">
-                <button type="button" onClick={() => setSessionModalOpen(false)}>Cancel</button>
-                <button type="submit" disabled={creatingSession}>{creatingSession ? 'Creating…' : 'Create session'}</button>
+                <button type="button" onClick={() => setSessionModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" disabled={creatingSession} className="btn-primary">{creatingSession ? 'Creating…' : 'Create session'}</button>
               </div>
             </form>
           </div>
@@ -437,8 +443,8 @@ function BatchDetail() {
                 />
               </div>
               <div className="modal-actions">
-                <button type="button" onClick={() => setExamModalOpen(false)}>Cancel</button>
-                <button type="submit" disabled={creatingExam}>{creatingExam ? 'Creating…' : 'Create exam'}</button>
+                <button type="button" onClick={() => setExamModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" disabled={creatingExam} className="btn-primary">{creatingExam ? 'Creating…' : 'Create exam'}</button>
               </div>
             </form>
           </div>

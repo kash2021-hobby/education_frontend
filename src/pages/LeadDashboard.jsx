@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../api'
+import { leadStatusBadge } from '../utils/badges'
 
 function LeadDashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -121,8 +122,8 @@ function LeadDashboard() {
     <div className="page">
       <div className="page-header">
         <h2>Leads</h2>
-        <div className="filters">
-          <Link to="/leads/board">Board view</Link>
+        <div className="toolbar">
+          <Link to="/leads/board" className="btn-secondary" style={{ textDecoration: 'none' }}>Board view</Link>
           <select
             value={statusFilter}
             onChange={(e) => {
@@ -163,16 +164,12 @@ function LeadDashboard() {
             <option value={20}>20 per page</option>
             <option value={50}>50 per page</option>
           </select>
-          <button type="button" onClick={() => setIngestModalOpen(true)} className="btn-primary">
-            Add lead
-          </button>
-          <button type="button" onClick={fetchLeads}>
-            Refresh
-          </button>
+          <button type="button" onClick={() => setIngestModalOpen(true)} className="btn-primary">Add lead</button>
+          <button type="button" onClick={fetchLeads} className="btn-secondary">Refresh</button>
         </div>
       </div>
 
-      {loading && <p>Loading leads...</p>}
+      {loading && <p className="small">Loading leads…</p>}
       {error && (
         <p className="error">
           {error}
@@ -180,10 +177,15 @@ function LeadDashboard() {
         </p>
       )}
 
-      {!loading && !error && leads.length === 0 && <p>No leads found. Relax or check your filters.</p>}
+      {!loading && !error && leads.length === 0 && (
+        <div className="section">
+          <p className="empty-state">No leads found. Adjust filters or add a new lead.</p>
+        </div>
+      )}
 
       {!loading && leads.length > 0 && (
         <>
+          <div className="table-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -203,17 +205,16 @@ function LeadDashboard() {
                   <td>{lead.full_name}</td>
                   <td>{lead.email}</td>
                   <td>{lead.phone_number}</td>
-                  <td>{lead.status}</td>
+                  <td><span className={`badge ${leadStatusBadge(lead.status)}`}>{lead.status}</span></td>
                   <td>{lead.source}</td>
                   <td>{lead.counselor_name || '—'}</td>
                   <td>{new Date(lead.created_at).toLocaleString()}</td>
-                  <td>
-                    <Link to={`/leads/${lead.id}`}>Open</Link>
-                  </td>
+                  <td><Link to={`/leads/${lead.id}`}>View</Link></td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
           <div className="pagination">
             <button
               type="button"
@@ -293,8 +294,8 @@ function LeadDashboard() {
                 </select>
               </div>
               <div className="modal-actions">
-                <button type="button" onClick={() => setIngestModalOpen(false)}>Cancel</button>
-                <button type="submit" disabled={ingestSubmitting}>
+                <button type="button" onClick={() => setIngestModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" disabled={ingestSubmitting} className="btn-primary">
                   {ingestSubmitting ? 'Adding…' : 'Add lead'}
                 </button>
               </div>

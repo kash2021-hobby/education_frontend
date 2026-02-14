@@ -133,11 +133,9 @@ function EnrollmentModal({ leadId, onClose, onSuccess }) {
           )}
 
           <div className="modal-actions">
-            <button type="button" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" disabled={loading || submitting}>
-              {submitting ? 'Converting...' : 'Convert'}
+            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+            <button type="submit" disabled={loading || submitting} className="btn-primary">
+              {submitting ? 'Converting…' : 'Convert'}
             </button>
           </div>
         </form>

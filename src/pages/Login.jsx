@@ -39,8 +39,9 @@ function Login() {
 
   return (
     <div className="page">
-      <div className="card" style={{ maxWidth: '400px', margin: '2rem auto' }}>
-        <h3>Login</h3>
+      <div className="auth-card">
+        <div className="card-accent" aria-hidden />
+        <h3>Welcome back</h3>
         {error && <p className="error">{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -49,6 +50,7 @@ function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
               required
             />
           </div>
@@ -58,12 +60,19 @@ function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
               required
             />
           </div>
           <div className="modal-actions">
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? (
+                <>
+                  <span className="loading-pulse" /> Logging in…
+                </>
+              ) : (
+                'Sign in'
+              )}
             </button>
           </div>
         </form>

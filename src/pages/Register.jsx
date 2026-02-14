@@ -54,10 +54,11 @@ function Register() {
 
   return (
     <div className="page">
-      <div className="card" style={{ maxWidth: '400px', margin: '2rem auto' }}>
-        <h3>Register</h3>
+      <div className="auth-card">
+        <div className="card-accent" aria-hidden />
+        <h3>Create account</h3>
         {error && <p className="error">{error}</p>}
-        {success && <p className="small">{success}</p>}
+        {success && <p className="small" style={{ color: 'var(--success)' }}>{success}</p>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Full name</label>
@@ -65,6 +66,7 @@ function Register() {
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              placeholder="Your name"
               required
             />
           </div>
@@ -74,6 +76,7 @@ function Register() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
               required
             />
           </div>
@@ -83,6 +86,7 @@ function Register() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
               required
             />
           </div>
@@ -92,17 +96,24 @@ function Register() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
               required
             />
           </div>
           <div className="modal-actions">
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Registering...' : 'Register'}
+              {loading ? (
+                <>
+                  <span className="loading-pulse" /> Registering…
+                </>
+              ) : (
+                'Register'
+              )}
             </button>
           </div>
         </form>
         <p className="small">
-          Already have an account? <Link to="/login">Login</Link>
+          Already have an account? <Link to="/login">Sign in</Link>
         </p>
       </div>
     </div>

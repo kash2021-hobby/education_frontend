@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { API_BASE } from '../config'
+import { studentStatusBadge } from '../utils/badges'
 
 function Students() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -74,7 +75,7 @@ function Students() {
     <div className="page">
       <div className="page-header">
         <h2>Students</h2>
-        <div className="filters">
+        <div className="toolbar">
           <select
             value={batchFilter}
             onChange={(e) => {
@@ -113,9 +114,7 @@ function Students() {
             <option value={20}>20 per page</option>
             <option value={50}>50 per page</option>
           </select>
-          <button type="button" onClick={fetchStudents}>
-            Refresh
-          </button>
+          <button type="button" onClick={fetchStudents} className="btn-secondary">Refresh</button>
         </div>
       </div>
 
@@ -125,10 +124,11 @@ function Students() {
           <button type="button" onClick={fetchStudents} className="retry-btn">Retry</button>
         </p>
       )}
-      {loading && <p>Loading students...</p>}
+      {loading && <p className="small">Loading students…</p>}
 
       {!loading && !error && (
         <>
+          <div className="table-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -144,7 +144,7 @@ function Students() {
             <tbody>
               {students.length === 0 && (
                 <tr>
-                  <td colSpan={7}>No students found.</td>
+                  <td colSpan={7} className="empty-state">No students found.</td>
                 </tr>
               )}
               {students.map((s) => (
@@ -153,15 +153,14 @@ function Students() {
                   <td>{s.lead_name}</td>
                   <td>{s.email}</td>
                   <td>{s.batch_name}</td>
-                  <td>{s.status}</td>
+                  <td><span className={`badge ${studentStatusBadge(s.status)}`}>{s.status}</span></td>
                   <td>{s.enrollment_date ? new Date(s.enrollment_date).toLocaleDateString() : '—'}</td>
-                  <td>
-                    <Link to={`/students/${s.id}`}>Open</Link>
-                  </td>
+                  <td><Link to={`/students/${s.id}`}>View</Link></td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
           <div className="pagination">
             <button
               type="button"

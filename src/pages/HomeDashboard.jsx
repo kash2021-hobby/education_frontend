@@ -98,8 +98,14 @@ function HomeDashboard() {
     <div className="page">
       <div className="page-header">
         <h2>Dashboard</h2>
-        <button type="button" onClick={fetchStats}>
-          Refresh
+        <button type="button" onClick={fetchStats} disabled={loading} className="btn-secondary">
+          {loading ? (
+            <>
+              <span className="loading-pulse" /> Refreshing…
+            </>
+          ) : (
+            'Refresh'
+          )}
         </button>
       </div>
 
@@ -111,58 +117,70 @@ function HomeDashboard() {
           </button>
         </p>
       )}
-      {loading && <p>Loading overview...</p>}
+      {loading && !error && (
+        <p className="small">
+          <span className="loading-pulse" /> Loading overview…
+        </p>
+      )}
 
       {!loading && !error && (
         <>
-          <section className="card">
-            <h3>Leads</h3>
+          <section className="section">
+            <h3 className="section-title">Leads</h3>
             <div className="dashboard-grid">
               <div className="stat-card">
+                <div className="stat-card-icon" aria-hidden>📋</div>
                 <div className="stat-card-title">Total leads</div>
                 <div className="stat-card-value">{stats.totalLeads}</div>
-                <Link to="/leads">View leads</Link>
+                <Link to="/leads">View leads →</Link>
               </div>
               <div className="stat-card">
+                <div className="stat-card-icon" aria-hidden>✨</div>
                 <div className="stat-card-title">New</div>
                 <div className="stat-card-value">{stats.newLeads}</div>
-                <Link to="/leads?status=NEW">View leads</Link>
+                <Link to="/leads?status=NEW">View leads →</Link>
               </div>
               <div className="stat-card">
+                <div className="stat-card-icon" aria-hidden>💡</div>
                 <div className="stat-card-title">Interested</div>
                 <div className="stat-card-value">{stats.interestedLeads}</div>
-                <Link to="/leads?status=INTERESTED">View leads</Link>
+                <Link to="/leads?status=INTERESTED">View leads →</Link>
               </div>
               <div className="stat-card">
+                <div className="stat-card-icon" aria-hidden>✅</div>
                 <div className="stat-card-title">Converted</div>
                 <div className="stat-card-value">{stats.convertedLeads}</div>
-                <Link to="/leads?status=CONVERTED">View leads</Link>
+                <Link to="/leads?status=CONVERTED">View leads →</Link>
               </div>
             </div>
           </section>
 
-          <section className="card">
-            <h3>Students & Batches</h3>
+          <section className="section">
+            <h3 className="section-title">Students & Batches</h3>
             <div className="dashboard-grid">
               <div className="stat-card">
+                <div className="stat-card-icon" aria-hidden>👥</div>
                 <div className="stat-card-title">Total students</div>
                 <div className="stat-card-value">{stats.totalStudents}</div>
-                <Link to="/students">View students</Link>
+                <Link to="/students">View students →</Link>
               </div>
               <div className="stat-card">
+                <div className="stat-card-icon" aria-hidden>🎓</div>
                 <div className="stat-card-title">Active students</div>
                 <div className="stat-card-value">{stats.activeStudents}</div>
-                <Link to="/students?status=ACTIVE">View students</Link>
+                <Link to="/students?status=ACTIVE">View students →</Link>
               </div>
               <div className="stat-card">
+                <div className="stat-card-icon" aria-hidden>📚</div>
                 <div className="stat-card-title">Total batches</div>
                 <div className="stat-card-value">{stats.totalBatches}</div>
-                <Link to="/batches">View batches</Link>
+                <Link to="/batches">View batches →</Link>
               </div>
               <div className="stat-card">
+                <div className="stat-card-icon" aria-hidden>🔄</div>
                 <div className="stat-card-title">Running batches</div>
                 <div className="stat-card-value">{stats.runningBatches}</div>
-                <Link to="/batches">View batches</Link>
+                <Link to="/batches">View batches →</Link>
               </div>
             </div>
           </section>
