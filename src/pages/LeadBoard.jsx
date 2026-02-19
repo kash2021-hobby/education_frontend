@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { API_BASE } from '../config'
 import { leadStatusBadge } from '../utils/badges'
+import { formatDate } from '../utils/date'
 
 const STATUSES = ['NEW', 'CONTACTED', 'INTERESTED', 'COLD', 'REJECTED', 'LOST', 'CONVERTED']
 
@@ -93,9 +94,7 @@ function LeadBoard() {
                         {lead.counselor_name || 'Unassigned'}
                       </div>
                       <div className="lead-card-meta small">
-                        {lead.created_at
-                          ? new Date(lead.created_at).toLocaleDateString()
-                          : ''}
+                        {formatDate(lead.created_at)}
                       </div>
                       <div className="lead-card-actions">
                         <Link to={`/leads/${lead.id}`}>View</Link>

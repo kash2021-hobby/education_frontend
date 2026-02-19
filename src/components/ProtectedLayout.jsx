@@ -23,6 +23,7 @@ function ProtectedLayout() {
           <NavLink to="/leads">Leads</NavLink>
           <NavLink to="/students">Students</NavLink>
           <NavLink to="/batches">Batches</NavLink>
+          <NavLink to="/attendance">Attendance</NavLink>
           <NavLink to="/courses">Courses</NavLink>
           <button type="button" onClick={handleLogout} className="logout-btn">
             Logout

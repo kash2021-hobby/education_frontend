@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../api'
-import { leadStatusBadge } from '../utils/badges'
+import { formatDateTime } from '../utils/date'
 
 function LeadDashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -25,6 +25,7 @@ function LeadDashboard() {
     phone_number: '',
     course_interest: '',
     source: 'WEBSITE',
+    counselorId: '',
   })
   const [ingestSubmitting, setIngestSubmitting] = useState(false)
   const [ingestMessage, setIngestMessage] = useState('')
@@ -102,13 +103,21 @@ function LeadDashboard() {
           phone_number: ingestForm.phone_number?.trim() || null,
           course_interest: ingestForm.course_interest?.trim() || null,
           source: ingestForm.source?.trim() || 'WEBSITE',
+          counselorId: ingestForm.counselorId || undefined,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Ingest failed')
       setIngestError(false)
       setIngestMessage(data.message || 'Lead added.')
-      setIngestForm({ full_name: '', email: '', phone_number: '', course_interest: '', source: 'WEBSITE' })
+      setIngestForm({
+        full_name: '',
+        email: '',
+        phone_number: '',
+        course_interest: '',
+        source: 'WEBSITE',
+        counselorId: '',
+      })
       fetchLeads()
     } catch (e) {
       setIngestError(true)
@@ -122,8 +131,8 @@ function LeadDashboard() {
     <div className="page">
       <div className="page-header">
         <h2>Leads</h2>
-        <div className="toolbar">
-          <Link to="/leads/board" className="btn-secondary" style={{ textDecoration: 'none' }}>Board view</Link>
+        <div className="filters">
+          <Link to="/leads/board">Board view</Link>
           <select
             value={statusFilter}
             onChange={(e) => {
@@ -140,7 +149,6 @@ function LeadDashboard() {
             <option value="COLD">COLD</option>
             <option value="REJECTED">REJECTED</option>
             <option value="LOST">LOST</option>
-            <option value="CONVERTED">CONVERTED</option>
           </select>
           <select
             value={assignedToFilter}
@@ -164,12 +172,16 @@ function LeadDashboard() {
             <option value={20}>20 per page</option>
             <option value={50}>50 per page</option>
           </select>
-          <button type="button" onClick={() => setIngestModalOpen(true)} className="btn-primary">Add lead</button>
-          <button type="button" onClick={fetchLeads} className="btn-secondary">Refresh</button>
+          <button type="button" onClick={() => setIngestModalOpen(true)} className="btn-primary">
+            Add lead
+          </button>
+          <button type="button" onClick={fetchLeads}>
+            Refresh
+          </button>
         </div>
       </div>
 
-      {loading && <p className="small">Loading leads…</p>}
+      {loading && <p>Loading leads...</p>}
       {error && (
         <p className="error">
           {error}
@@ -177,15 +189,10 @@ function LeadDashboard() {
         </p>
       )}
 
-      {!loading && !error && leads.length === 0 && (
-        <div className="section">
-          <p className="empty-state">No leads found. Adjust filters or add a new lead.</p>
-        </div>
-      )}
+      {!loading && !error && leads.length === 0 && <p>No leads found. Relax or check your filters.</p>}
 
       {!loading && leads.length > 0 && (
         <>
-          <div className="table-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -205,16 +212,17 @@ function LeadDashboard() {
                   <td>{lead.full_name}</td>
                   <td>{lead.email}</td>
                   <td>{lead.phone_number}</td>
-                  <td><span className={`badge ${leadStatusBadge(lead.status)}`}>{lead.status}</span></td>
+                  <td>{lead.status}</td>
                   <td>{lead.source}</td>
                   <td>{lead.counselor_name || '—'}</td>
-                  <td>{new Date(lead.created_at).toLocaleString()}</td>
-                  <td><Link to={`/leads/${lead.id}`}>View</Link></td>
+                  <td>{formatDateTime(lead.created_at)}</td>
+                  <td>
+                    <Link to={`/leads/${lead.id}`}>Open</Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          </div>
           <div className="pagination">
             <button
               type="button"
@@ -282,6 +290,25 @@ function LeadDashboard() {
                 />
               </div>
               <div className="form-group">
+                <label>Counselor (optional)</label>
+                <select
+                  value={ingestForm.counselorId}
+                  onChange={(e) => setIngestForm((f) => ({ ...f, counselorId: e.target.value }))}
+                >
+                  <option value="">Auto-assign counselor</option>
+                  {users
+                    .filter((u) => u.role === 'COUNSELOR')
+                    .map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name}
+                      </option>
+                    ))}
+                </select>
+                <p className="small">
+                  If you leave this empty, the system will auto-assign a counselor based on availability.
+                </p>
+              </div>
+              <div className="form-group">
                 <label>Source</label>
                 <select
                   value={ingestForm.source}
@@ -294,8 +321,8 @@ function LeadDashboard() {
                 </select>
               </div>
               <div className="modal-actions">
-                <button type="button" onClick={() => setIngestModalOpen(false)} className="btn-secondary">Cancel</button>
-                <button type="submit" disabled={ingestSubmitting} className="btn-primary">
+                <button type="button" onClick={() => setIngestModalOpen(false)}>Cancel</button>
+                <button type="submit" disabled={ingestSubmitting}>
                   {ingestSubmitting ? 'Adding…' : 'Add lead'}
                 </button>
               </div>

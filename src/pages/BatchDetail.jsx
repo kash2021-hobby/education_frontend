@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { API_BASE } from '../config'
+import { apiFetch } from '../api'
+import { formatDate } from '../utils/date'
 
 function BatchDetail() {
   const { id } = useParams()
@@ -26,15 +27,16 @@ function BatchDetail() {
   const [pendingExamId, setPendingExamId] = useState(null)
   const [examResults, setExamResults] = useState({}) // studentId -> { marksObtained, remarks }
   const [submittingResults, setSubmittingResults] = useState(false)
+  const [bulkCsvUploading, setBulkCsvUploading] = useState(false)
 
   async function fetchBatch() {
     setLoading(true)
     setError('')
     try {
       const [batchRes, studentsRes, usersRes] = await Promise.all([
-        fetch(`${API_BASE}/api/v1/batches/${id}`).then((r) => (r.ok ? r.json() : null)),
-        fetch(`${API_BASE}/api/v1/batches/${id}/students`).then((r) => r.json()),
-        fetch(`${API_BASE}/api/v1/users`).then((r) => r.json()),
+        apiFetch(`/api/v1/batches/${id}`).then((r) => (r.ok ? r.json() : null)),
+        apiFetch(`/api/v1/batches/${id}/students`).then((r) => r.json()),
+        apiFetch(`/api/v1/users`).then((r) => r.json()),
       ])
       setBatch(batchRes)
       setStudents(studentsRes.data || [])
@@ -75,7 +77,7 @@ function BatchDetail() {
     }
     setCreatingSession(true)
     try {
-      const res = await fetch(`${API_BASE}/api/v1/attendance/sessions`, {
+      const res = await apiFetch('/api/v1/attendance/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -104,7 +106,7 @@ function BatchDetail() {
     if (records.length === 0) return
     setSubmittingAttendance(true)
     try {
-      const res = await fetch(`${API_BASE}/api/v1/attendance/sessions/${pendingSessionId}/records`, {
+      const res = await apiFetch(`/api/v1/attendance/sessions/${pendingSessionId}/records`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ records }),
@@ -127,7 +129,7 @@ function BatchDetail() {
     }
     setCreatingExam(true)
     try {
-      const res = await fetch(`${API_BASE}/api/v1/exams`, {
+      const res = await apiFetch('/api/v1/exams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -163,7 +165,7 @@ function BatchDetail() {
     }
     setSubmittingResults(true)
     try {
-      const res = await fetch(`${API_BASE}/api/v1/exams/${pendingExamId}/results`, {
+      const res = await apiFetch(`/api/v1/exams/${pendingExamId}/results`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ results }),
@@ -175,6 +177,81 @@ function BatchDetail() {
       alert(err.message)
     } finally {
       setSubmittingResults(false)
+    }
+  }
+
+  function parseCsv(text) {
+    const lines = text.trim().split(/\r?\n/).filter((l) => l.trim())
+    if (lines.length < 2) return []
+    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/\s+/g, '_'))
+    const results = []
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map((v) => v.trim())
+      const row = {}
+      headers.forEach((h, j) => { row[h] = values[j] ?? '' })
+      results.push(row)
+    }
+    return results
+  }
+
+  async function handleBulkCsvUpload(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (!file.name.endsWith('.csv')) {
+      alert('Please select a CSV file')
+      return
+    }
+    if (!pendingExamId || students.length === 0) {
+      alert('Select an exam first and ensure batch has students')
+      return
+    }
+    const enrollmentToStudent = {}
+    students.forEach((s) => { enrollmentToStudent[String(s.enrollment_number).toLowerCase().trim()] = s.student_id })
+    setBulkCsvUploading(true)
+    try {
+      const text = await file.text()
+      const rows = parseCsv(text)
+      if (rows.length === 0) {
+        alert('CSV has no data rows. Expected: enrollment_number, marks, remarks')
+        return
+      }
+      const results = []
+      const missing = []
+      for (const row of rows) {
+        const enrollment = String(row.enrollment_number ?? row.enrollmentnumber ?? row.enrollment ?? '').toLowerCase().trim()
+        const marks = row.marks ?? row.marks_obtained ?? row.mark ?? ''
+        if (!enrollment || marks === '') continue
+        const studentId = enrollmentToStudent[enrollment]
+        if (!studentId) {
+          missing.push(enrollment)
+          continue
+        }
+        results.push({
+          studentId,
+          marksObtained: Number(marks),
+          remarks: (row.remarks ?? '').trim() || undefined,
+        })
+      }
+      if (missing.length > 0) {
+        alert(`Skipped ${missing.length} row(s): enrollment number not found in batch: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? '…' : ''}`)
+      }
+      if (results.length === 0) {
+        alert('No valid rows to upload. CSV must have columns: enrollment_number, marks, remarks')
+        return
+      }
+      const res = await apiFetch(`/api/v1/exams/${pendingExamId}/results`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ results }),
+      })
+      if (!res.ok) throw new Error('Failed to save results')
+      setPendingExamId(null)
+      setExamResults({})
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setBulkCsvUploading(false)
     }
   }
 
@@ -201,7 +278,7 @@ function BatchDetail() {
         <p><strong>Course:</strong> {batch.course_name}</p>
         <p><strong>Status:</strong> {batch.status}</p>
         <p><strong>Seats:</strong> {batch.current_enrollment} / {batch.max_seats}</p>
-        <p><strong>Start date:</strong> {batch.start_date ? new Date(batch.start_date).toLocaleDateString() : '—'}</p>
+        <p><strong>Start date:</strong> {formatDate(batch.start_date)}</p>
       </section>
 
       <section className="section">
@@ -289,6 +366,34 @@ function BatchDetail() {
         {pendingExamId && (
           <div className="sub-form">
             <h4>Add results for this exam</h4>
+            <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <label className="btn-secondary" style={{ cursor: 'pointer', margin: 0 }}>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleBulkCsvUpload}
+                  disabled={bulkCsvUploading}
+                  style={{ display: 'none' }}
+                />
+                {bulkCsvUploading ? 'Uploading…' : 'Bulk upload CSV'}
+              </label>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  const sample = students.slice(0, 3).map((s) => `${s.enrollment_number},,`).join('\n')
+                  const csv = `enrollment_number,marks,remarks\n${sample}`
+                  const blob = new Blob([csv], { type: 'text/csv' })
+                  const a = document.createElement('a')
+                  a.href = URL.createObjectURL(blob)
+                  a.download = 'exam-results-sample.csv'
+                  a.click()
+                  URL.revokeObjectURL(a.href)
+                }}
+              >
+                Download sample
+              </button>
+            </div>
             <form onSubmit={submitExamResults}>
               <div className="table-wrapper">
               <table className="data-table">

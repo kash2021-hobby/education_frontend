@@ -11,6 +11,7 @@ import StudentDetail from './pages/StudentDetail.jsx'
 import Batches from './pages/Batches.jsx'
 import BatchDetail from './pages/BatchDetail.jsx'
 import Courses from './pages/Courses.jsx'
+import Attendance from './pages/Attendance.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 
@@ -44,6 +45,7 @@ function App() {
           <Route path="/batches" element={<Batches />} />
           <Route path="/batches/:id" element={<BatchDetail />} />
           <Route path="/courses" element={<Courses />} />
+          <Route path="/attendance" element={<Attendance />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

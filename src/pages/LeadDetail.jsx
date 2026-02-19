@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import EnrollmentModal from '../components/EnrollmentModal'
 import { API_BASE } from '../config'
+import { formatDateTime } from '../utils/date'
 
 function LeadDetail() {
   const { id } = useParams()
@@ -110,7 +111,7 @@ function LeadDetail() {
 
   return (
     <div className="page">
-      <button type="button" onClick={() => navigate('/leads')} className="btn-back">
+      <button type="button" onClick={() => navigate('/leads')}>
         ← Back to Leads
       </button>
 
@@ -149,9 +150,10 @@ function LeadDetail() {
             <option value="COLD">COLD</option>
             <option value="REJECTED">REJECTED</option>
             <option value="LOST">LOST</option>
-            <option value="CONVERTED">CONVERTED</option>
           </select>
-          <button type="button" onClick={updateStatus} className="btn-primary">Update</button>
+          <button type="button" onClick={updateStatus}>
+            Update
+          </button>
         </p>
         {statusError && <p className="error">{statusError}</p>}
         {lead.status !== 'CONVERTED' && (
@@ -192,8 +194,12 @@ function LeadDetail() {
             placeholder="Add a note or call summary..."
           />
           <div className="note-actions">
-            <button type="button" onClick={addNote} disabled={!note.trim()} className="btn-primary">Add note</button>
-            <button type="button" onClick={addCallLog} disabled={!note.trim()} className="btn-secondary">Log call</button>
+            <button type="button" onClick={addNote} disabled={!note.trim()}>
+              Add Note
+            </button>
+            <button type="button" onClick={addCallLog} disabled={!note.trim()}>
+              Log call
+            </button>
           </div>
         </div>
         {activities.length === 0 && <p>No activities yet.</p>}
@@ -203,7 +209,7 @@ function LeadDetail() {
               <li key={act.id}>
                 <div>
                   <strong>{act.activity_type}</strong>{' '}
-                  <span>{new Date(act.created_at).toLocaleString()}</span>
+                  <span>{formatDateTime(act.created_at)}</span>
                 </div>
                 {act.description && <p>{act.description}</p>}
               </li>

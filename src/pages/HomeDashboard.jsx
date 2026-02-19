@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { API_BASE } from '../config'
+import { apiFetch } from '../api'
 
 function HomeDashboard() {
   const [stats, setStats] = useState({
@@ -21,13 +21,13 @@ function HomeDashboard() {
     setError('')
     try {
       const queries = [
-        `${API_BASE}/api/v1/leads?page=1&pageSize=1`,
-        `${API_BASE}/api/v1/leads?status=NEW&page=1&pageSize=1`,
-        `${API_BASE}/api/v1/leads?status=INTERESTED&page=1&pageSize=1`,
-        `${API_BASE}/api/v1/leads?status=CONVERTED&page=1&pageSize=1`,
-        `${API_BASE}/api/v1/students?page=1&pageSize=1`,
-        `${API_BASE}/api/v1/students?status=ACTIVE&page=1&pageSize=1`,
-        `${API_BASE}/api/v1/batches`,
+        '/api/v1/leads?page=1&pageSize=1',
+        '/api/v1/leads?status=NEW&page=1&pageSize=1',
+        '/api/v1/leads?status=INTERESTED&page=1&pageSize=1',
+        '/api/v1/leads?status=CONVERTED&page=1&pageSize=1',
+        '/api/v1/students?page=1&pageSize=1',
+        '/api/v1/students?status=ACTIVE&page=1&pageSize=1',
+        '/api/v1/batches',
       ]
 
       const [
@@ -38,7 +38,7 @@ function HomeDashboard() {
         studentsAllRes,
         studentsActiveRes,
         batchesRes,
-      ] = await Promise.all(queries.map((url) => fetch(url)))
+      ] = await Promise.all(queries.map((url) => apiFetch(url)))
 
       if (
         !leadsAllRes.ok ||
@@ -136,7 +136,7 @@ function HomeDashboard() {
               </div>
               <div className="stat-card">
                 <div className="stat-card-icon" aria-hidden>✨</div>
-                <div className="stat-card-title">New</div>
+                <div className="stat-card-title">New leads</div>
                 <div className="stat-card-value">{stats.newLeads}</div>
                 <Link to="/leads?status=NEW">View leads →</Link>
               </div>

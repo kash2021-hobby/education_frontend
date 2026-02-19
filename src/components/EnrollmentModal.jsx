@@ -4,7 +4,8 @@ import { API_BASE } from '../config'
 function EnrollmentModal({ leadId, onClose, onSuccess }) {
   const [courses, setCourses] = useState([])
   const [batches, setBatches] = useState([])
-  const [batchId, setBatchId] = useState('')
+  const [selectedCourseIds, setSelectedCourseIds] = useState([])
+  const [batchForCourse, setBatchForCourse] = useState({})
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState('CASH')
   const [transactionRef, setTransactionRef] = useState('')
@@ -23,9 +24,6 @@ function EnrollmentModal({ leadId, onClose, onSuccess }) {
         if (cancelled) return
         setCourses(coursesRes.data || [])
         setBatches(batchesRes.data || [])
-        if ((batchesRes.data || []).length > 0 && !batchId) {
-          setBatchId(batchesRes.data[0].id)
-        }
       })
       .catch(() => {
         if (!cancelled) setError('Failed to load courses/batches')
@@ -38,8 +36,18 @@ function EnrollmentModal({ leadId, onClose, onSuccess }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!batchId || !amount || !transactionRef) {
-      setError('Batch, amount and transaction ref are required')
+    if (!selectedCourseIds.length) {
+      setError('Select at least one course')
+      return
+    }
+    for (const courseId of selectedCourseIds) {
+      if (!batchForCourse[courseId]) {
+        setError('Select a batch for each chosen course')
+        return
+      }
+    }
+    if (!amount || !transactionRef) {
+      setError('Amount and transaction ref are required')
       return
     }
     setSubmitting(true)
@@ -50,7 +58,8 @@ function EnrollmentModal({ leadId, onClose, onSuccess }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           leadId,
-          batchId,
+          courseIds: selectedCourseIds,
+          batchForCourse,
           payment: {
             amount: parseFloat(amount),
             method,
@@ -85,20 +94,76 @@ function EnrollmentModal({ leadId, onClose, onSuccess }) {
           {!loading && (
             <>
               <div className="form-group">
-                <label>Batch</label>
-                <select
-                  value={batchId}
-                  onChange={(e) => setBatchId(e.target.value)}
-                  required
-                >
-                  <option value="">Select batch</option>
-                  {batches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name} ({b.course_name}) — {b.current_enrollment}/{b.max_seats}
-                    </option>
-                  ))}
-                </select>
+                <label>Courses (select one or more)</label>
+                {courses.length === 0 && <p className="small">No courses found.</p>}
+                {courses.length > 0 && (
+                  <div className="checkbox-list">
+                    {courses.map((c) => {
+                      const checked = selectedCourseIds.includes(c.id)
+                      return (
+                        <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              setError('')
+                              setSelectedCourseIds((prev) => {
+                                if (e.target.checked) {
+                                  return [...prev, c.id]
+                                }
+                                const next = prev.filter((id) => id !== c.id)
+                                const copy = { ...batchForCourse }
+                                delete copy[c.id]
+                                setBatchForCourse(copy)
+                                return next
+                              })
+                            }}
+                          />
+                          <span>{c.name} ({c.code})</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
+              {selectedCourseIds.length > 0 && (
+                <div className="form-group">
+                  <label>Batch for each course</label>
+                  <div className="sub-form">
+                    {selectedCourseIds.map((courseId) => {
+                      const course = courses.find((c) => c.id === courseId)
+                      const courseBatches = batches.filter((b) => b.course_id === courseId)
+                      return (
+                        <div key={courseId} className="form-row" style={{ marginBottom: '0.5rem', alignItems: 'center' }}>
+                          <div className="form-group" style={{ minWidth: '160px' }}>
+                            <span className="small"><strong>{course?.name}</strong> ({course?.code})</span>
+                          </div>
+                          <div className="form-group" style={{ flex: 1 }}>
+                            <select
+                              value={batchForCourse[courseId] || ''}
+                              onChange={(e) =>
+                                setBatchForCourse((prev) => ({
+                                  ...prev,
+                                  [courseId]: e.target.value,
+                                }))
+                              }
+                            >
+                              <option value="">
+                                {courseBatches.length ? 'Select batch' : 'No batches for this course'}
+                              </option>
+                              {courseBatches.map((b) => (
+                                <option key={b.id} value={b.id}>
+                                  {b.name} — {b.current_enrollment}/{b.max_seats}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="form-group">
                 <label>Amount</label>
                 <input
@@ -133,9 +198,11 @@ function EnrollmentModal({ leadId, onClose, onSuccess }) {
           )}
 
           <div className="modal-actions">
-            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-            <button type="submit" disabled={loading || submitting} className="btn-primary">
-              {submitting ? 'Converting…' : 'Convert'}
+            <button type="button" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" disabled={loading || submitting}>
+              {submitting ? 'Converting...' : 'Convert'}
             </button>
           </div>
         </form>
