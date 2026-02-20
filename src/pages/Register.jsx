@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { apiFetch } from '../api'
+import { Loader2 } from 'lucide-react'
 
 function Register() {
   const navigate = useNavigate()
@@ -53,12 +54,23 @@ function Register() {
   }
 
   return (
-    <div className="page">
-      <div className="auth-card">
-        <div className="card-accent" aria-hidden />
-        <h3>Create account</h3>
-        {error && <p className="error">{error}</p>}
-        {success && <p className="small" style={{ color: 'var(--success)' }}>{success}</p>}
+    <div className="w-full max-w-md">
+      <div className="card relative overflow-hidden">
+        <div
+          className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-green-500 to-green-700"
+          aria-hidden
+        />
+        <h3 className="mb-6 text-xl font-semibold text-slate-900">Create account</h3>
+        {error && (
+          <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            {error}
+          </p>
+        )}
+        {success && (
+          <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            {success}
+          </p>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Full name</label>
@@ -101,10 +113,11 @@ function Register() {
             />
           </div>
           <div className="modal-actions">
-            <button type="submit" className="btn-primary" disabled={loading}>
+            <button type="submit" className="btn-primary flex items-center gap-2" disabled={loading}>
               {loading ? (
                 <>
-                  <span className="loading-pulse" /> Registering…
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Registering…
                 </>
               ) : (
                 'Register'
@@ -112,8 +125,11 @@ function Register() {
             </button>
           </div>
         </form>
-        <p className="small">
-          Already have an account? <Link to="/login">Sign in</Link>
+        <p className="mt-4 text-sm text-slate-500">
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-green-600 hover:underline">
+            Sign in
+          </Link>
         </p>
       </div>
     </div>
@@ -121,4 +137,3 @@ function Register() {
 }
 
 export default Register
-

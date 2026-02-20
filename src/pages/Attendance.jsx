@@ -127,26 +127,29 @@ function Attendance() {
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>Attendance</h2>
-        <div className="toolbar">
-          <select
-            value={selectedBatchId}
-            onChange={(e) => setSelectedBatchId(e.target.value)}
-          >
-            <option value="">Select batch</option>
-            {batches.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h2 className="text-2xl font-semibold text-slate-900">Attendance</h2>
+        <select
+          value={selectedBatchId}
+          onChange={(e) => setSelectedBatchId(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+        >
+          <option value="">Select batch</option>
+          {batches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {error && <p className="error">{error}</p>}
-      {loading && <p className="small">Loading students…</p>}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+      {loading && <div className="skeleton h-24 w-full rounded-xl" />}
 
       {!error && (
         <>

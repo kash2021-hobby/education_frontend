@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { apiFetch } from '../api'
 import { formatDate } from '../utils/date'
+import { toast } from 'sonner'
 
 function BatchDetail() {
   const { id } = useParams()
@@ -72,7 +73,7 @@ function BatchDetail() {
   async function createSession(e) {
     e.preventDefault()
     if (!sessionForm.teacherId || !sessionForm.date || !sessionForm.subject || !sessionForm.startTime || !sessionForm.endTime) {
-      alert('Please fill all fields')
+      toast.error('Please fill all fields')
       return
     }
     setCreatingSession(true)
@@ -94,7 +95,7 @@ function BatchDetail() {
       setPendingSessionId(data.id)
       setSessionModalOpen(false)
     } catch (err) {
-      alert(err.message)
+      toast.error(err.message)
     } finally {
       setCreatingSession(false)
     }
@@ -115,7 +116,7 @@ function BatchDetail() {
       setPendingSessionId(null)
       setAttendanceRecords({})
     } catch (err) {
-      alert(err.message)
+      toast.error(err.message)
     } finally {
       setSubmittingAttendance(false)
     }
@@ -124,7 +125,7 @@ function BatchDetail() {
   async function createExam(e) {
     e.preventDefault()
     if (!examForm.name || !examForm.maxMarks || !examForm.date) {
-      alert('Name, max marks and date are required')
+      toast.error('Name, max marks and date are required')
       return
     }
     setCreatingExam(true)
@@ -144,7 +145,7 @@ function BatchDetail() {
       setPendingExamId(data.id)
       setExamModalOpen(false)
     } catch (err) {
-      alert(err.message)
+      toast.error(err.message)
     } finally {
       setCreatingExam(false)
     }
@@ -160,7 +161,7 @@ function BatchDetail() {
         remarks: (v.remarks || '').trim() || undefined,
       }))
     if (results.length === 0) {
-      alert('Enter at least one student\'s marks')
+      toast.error('Enter at least one student\'s marks')
       return
     }
     setSubmittingResults(true)
@@ -174,7 +175,7 @@ function BatchDetail() {
       setPendingExamId(null)
       setExamResults({})
     } catch (err) {
-      alert(err.message)
+      toast.error(err.message)
     } finally {
       setSubmittingResults(false)
     }
@@ -199,11 +200,11 @@ function BatchDetail() {
     e.target.value = ''
     if (!file) return
     if (!file.name.endsWith('.csv')) {
-      alert('Please select a CSV file')
+      toast.error('Please select a CSV file')
       return
     }
     if (!pendingExamId || students.length === 0) {
-      alert('Select an exam first and ensure batch has students')
+      toast.error('Select an exam first and ensure batch has students')
       return
     }
     const enrollmentToStudent = {}
@@ -213,7 +214,7 @@ function BatchDetail() {
       const text = await file.text()
       const rows = parseCsv(text)
       if (rows.length === 0) {
-        alert('CSV has no data rows. Expected: enrollment_number, marks, remarks')
+        toast.error('CSV has no data rows. Expected: enrollment_number, marks, remarks')
         return
       }
       const results = []
@@ -234,10 +235,10 @@ function BatchDetail() {
         })
       }
       if (missing.length > 0) {
-        alert(`Skipped ${missing.length} row(s): enrollment number not found in batch: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? '…' : ''}`)
+        toast.warning(`Skipped ${missing.length} row(s): enrollment number not found in batch: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? '…' : ''}`)
       }
       if (results.length === 0) {
-        alert('No valid rows to upload. CSV must have columns: enrollment_number, marks, remarks')
+        toast.error('No valid rows to upload. CSV must have columns: enrollment_number, marks, remarks')
         return
       }
       const res = await apiFetch(`/api/v1/exams/${pendingExamId}/results`, {
@@ -249,29 +250,30 @@ function BatchDetail() {
       setPendingExamId(null)
       setExamResults({})
     } catch (err) {
-      alert(err.message)
+      toast.error(err.message)
     } finally {
       setBulkCsvUploading(false)
     }
   }
 
-  if (loading) return <p className="small">Loading batch…</p>
+  if (loading) return <div className="skeleton h-32 w-full rounded-xl" />
   if (error) {
     return (
-      <div className="page">
-        <p className="error">{error} <button type="button" onClick={fetchBatch} className="retry-btn">Retry</button></p>
+      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        {error} <button type="button" onClick={fetchBatch} className="btn-link ml-2">Retry</button>
       </div>
     )
   }
-  if (!batch) return <p>Batch not found.</p>
+  if (!batch) return <p className="text-slate-600">Batch not found.</p>
 
   return (
-    <div className="page">
-      <button type="button" onClick={() => navigate('/batches')} className="btn-back">
-        ← Back to Batches
-      </button>
-
-      <h2 className="page-header" style={{ marginBottom: '1rem' }}>Batch: {batch.name}</h2>
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <button type="button" onClick={() => navigate('/batches')} className="btn-ghost">
+          ← Back to Batches
+        </button>
+      </div>
+      <h2 className="text-2xl font-semibold text-slate-900">Batch: {batch.name}</h2>
 
       <section className="section">
         <h3 className="section-title">Info</h3>
