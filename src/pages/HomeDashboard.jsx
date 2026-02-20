@@ -1,6 +1,30 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '../api'
+import { DashboardSkeleton } from '../components/Skeleton'
+import {
+  LayoutDashboard,
+  Users,
+  UserCheck,
+  BookOpen,
+  RefreshCw,
+  Sparkles,
+  Lightbulb,
+  CheckCircle,
+  GraduationCap,
+  Loader2,
+} from 'lucide-react'
+
+const statCards = [
+  { key: 'totalLeads', label: 'Total leads', link: '/leads', icon: Users, color: 'text-green-600' },
+  { key: 'newLeads', label: 'New leads', link: '/leads?status=NEW', icon: Sparkles, color: 'text-blue-600' },
+  { key: 'interestedLeads', label: 'Interested', link: '/leads?status=INTERESTED', icon: Lightbulb, color: 'text-violet-600' },
+  { key: 'convertedLeads', label: 'Converted', link: '/leads?status=CONVERTED', icon: CheckCircle, color: 'text-emerald-600' },
+  { key: 'totalStudents', label: 'Total students', link: '/students', icon: Users, color: 'text-slate-600' },
+  { key: 'activeStudents', label: 'Active students', link: '/students?status=ACTIVE', icon: UserCheck, color: 'text-emerald-600' },
+  { key: 'totalBatches', label: 'Total batches', link: '/batches', icon: BookOpen, color: 'text-slate-600' },
+  { key: 'runningBatches', label: 'Running batches', link: '/batches', icon: GraduationCap, color: 'text-green-600' },
+]
 
 function HomeDashboard() {
   const [stats, setStats] = useState({
@@ -95,93 +119,74 @@ function HomeDashboard() {
   }, [])
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>Dashboard</h2>
-        <button type="button" onClick={fetchStats} disabled={loading} className="btn-secondary">
-          {loading ? (
-            <>
-              <span className="loading-pulse" /> Refreshing…
-            </>
-          ) : (
-            'Refresh'
-          )}
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h2 className="text-2xl font-semibold text-slate-900">Dashboard</h2>
+        <button
+          type="button"
+          onClick={fetchStats}
+          disabled={loading}
+          className="btn-secondary flex items-center gap-2"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          Refresh
         </button>
       </div>
 
       {error && (
-        <p className="error">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}{' '}
-          <button type="button" onClick={fetchStats} className="retry-btn">
+          <button type="button" onClick={fetchStats} className="btn-link ml-2">
             Retry
           </button>
-        </p>
+        </div>
       )}
-      {loading && !error && (
-        <p className="small">
-          <span className="loading-pulse" /> Loading overview…
-        </p>
-      )}
+
+      {loading && !error && <DashboardSkeleton />}
 
       {!loading && !error && (
         <>
-          <section className="section">
-            <h3 className="section-title">Leads</h3>
-            <div className="dashboard-grid">
-              <div className="stat-card">
-                <div className="stat-card-icon" aria-hidden>📋</div>
-                <div className="stat-card-title">Total leads</div>
-                <div className="stat-card-value">{stats.totalLeads}</div>
-                <Link to="/leads">View leads →</Link>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-icon" aria-hidden>✨</div>
-                <div className="stat-card-title">New leads</div>
-                <div className="stat-card-value">{stats.newLeads}</div>
-                <Link to="/leads?status=NEW">View leads →</Link>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-icon" aria-hidden>💡</div>
-                <div className="stat-card-title">Interested</div>
-                <div className="stat-card-value">{stats.interestedLeads}</div>
-                <Link to="/leads?status=INTERESTED">View leads →</Link>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-icon" aria-hidden>✅</div>
-                <div className="stat-card-title">Converted</div>
-                <div className="stat-card-value">{stats.convertedLeads}</div>
-                <Link to="/leads?status=CONVERTED">View leads →</Link>
-              </div>
+          <section>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">
+              Leads
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {statCards.slice(0, 4).map(({ key, label, link, icon: Icon, color }) => (
+                <Link
+                  key={key}
+                  to={link}
+                  className="card-hover flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+                  <Icon className={`mb-2 h-6 w-6 ${color}`} aria-hidden />
+                  <div className="text-sm text-slate-500">{label}</div>
+                  <div className="text-2xl font-bold text-slate-900">{stats[key]}</div>
+                  <span className="mt-2 text-sm font-medium text-green-600 hover:underline">
+                    View leads →
+                  </span>
+                </Link>
+              ))}
             </div>
           </section>
 
-          <section className="section">
-            <h3 className="section-title">Students & Batches</h3>
-            <div className="dashboard-grid">
-              <div className="stat-card">
-                <div className="stat-card-icon" aria-hidden>👥</div>
-                <div className="stat-card-title">Total students</div>
-                <div className="stat-card-value">{stats.totalStudents}</div>
-                <Link to="/students">View students →</Link>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-icon" aria-hidden>🎓</div>
-                <div className="stat-card-title">Active students</div>
-                <div className="stat-card-value">{stats.activeStudents}</div>
-                <Link to="/students?status=ACTIVE">View students →</Link>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-icon" aria-hidden>📚</div>
-                <div className="stat-card-title">Total batches</div>
-                <div className="stat-card-value">{stats.totalBatches}</div>
-                <Link to="/batches">View batches →</Link>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-icon" aria-hidden>🔄</div>
-                <div className="stat-card-title">Running batches</div>
-                <div className="stat-card-value">{stats.runningBatches}</div>
-                <Link to="/batches">View batches →</Link>
-              </div>
+          <section>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">
+              Students & Batches
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {statCards.slice(4, 8).map(({ key, label, link, icon: Icon, color }) => (
+                <Link
+                  key={key}
+                  to={link}
+                  className="card-hover flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+                  <Icon className={`mb-2 h-6 w-6 ${color}`} aria-hidden />
+                  <div className="text-sm text-slate-500">{label}</div>
+                  <div className="text-2xl font-bold text-slate-900">{stats[key]}</div>
+                  <span className="mt-2 text-sm font-medium text-green-600 hover:underline">
+                    View →
+                  </span>
+                </Link>
+              ))}
             </div>
           </section>
         </>
@@ -191,4 +196,3 @@ function HomeDashboard() {
 }
 
 export default HomeDashboard
-
