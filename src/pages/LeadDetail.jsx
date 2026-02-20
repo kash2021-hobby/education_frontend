@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import EnrollmentModal from '../components/EnrollmentModal'
 import { API_BASE } from '../config'
 import { formatDateTime } from '../utils/date'
+import { toast } from 'sonner'
+import { ArrowLeft, Phone, Mail, MessageCircle } from 'lucide-react'
+import { CardSkeleton } from '../components/Skeleton'
 
 function LeadDetail() {
   const { id } = useParams()
@@ -53,7 +56,7 @@ function LeadDetail() {
       setNote('')
       fetchLead()
     } catch (e) {
-      alert(e.message)
+      toast.error(e.message)
     }
   }
 
@@ -64,7 +67,7 @@ function LeadDetail() {
       setNote('')
       fetchLead()
     } catch (e) {
-      alert(e.message)
+      toast.error(e.message)
     }
   }
 
@@ -93,15 +96,15 @@ function LeadDetail() {
     }
   }
 
-  if (loading) return <p>Loading lead...</p>
+  if (loading) return <CardSkeleton lines={6} />
   if (error) {
     return (
-      <div className="page">
-        <p className="error">{error} <button type="button" onClick={fetchLead} className="retry-btn">Retry</button></p>
+      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        {error} <button type="button" onClick={fetchLead} className="btn-link ml-2">Retry</button>
       </div>
     )
   }
-  if (!lead) return <p>Lead not found.</p>
+  if (!lead) return <p className="text-slate-600">Lead not found.</p>
 
   const phoneFull = [lead.phone_country_code, lead.phone_number].filter(Boolean).join('').replace(/\s/g, '')
   const phoneDigits = phoneFull.replace(/\D/g, '')
@@ -110,20 +113,34 @@ function LeadDetail() {
   const mailtoUrl = lead.email ? `mailto:${lead.email}` : null
 
   return (
-    <div className="page">
-      <button type="button" onClick={() => navigate('/leads')}>
-        ← Back to Leads
-      </button>
-
-      <h2>Lead Detail</h2>
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <button type="button" onClick={() => navigate('/leads')} className="btn-ghost flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Leads
+        </button>
+      </div>
+      <h2 className="text-2xl font-semibold text-slate-900">Lead Detail</h2>
 
       <section className="card">
-        <h3>Profile</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Profile</h3>
         {(telUrl || mailtoUrl || whatsappUrl) && (
-          <div className="action-bar">
-            {telUrl && <a href={telUrl} className="action-link" target="_blank" rel="noopener noreferrer">Call</a>}
-            {mailtoUrl && <a href={mailtoUrl} className="action-link" target="_blank" rel="noopener noreferrer">Email</a>}
-            {whatsappUrl && <a href={whatsappUrl} className="action-link" target="_blank" rel="noopener noreferrer">WhatsApp</a>}
+          <div className="mb-4 flex gap-3">
+            {telUrl && (
+              <a href={telUrl} className="inline-flex items-center gap-2 text-sm font-medium text-green-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                <Phone className="h-4 w-4" /> Call
+              </a>
+            )}
+            {mailtoUrl && (
+              <a href={mailtoUrl} className="inline-flex items-center gap-2 text-sm font-medium text-green-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                <Mail className="h-4 w-4" /> Email
+              </a>
+            )}
+            {whatsappUrl && (
+              <a href={whatsappUrl} className="inline-flex items-center gap-2 text-sm font-medium text-green-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="h-4 w-4" /> WhatsApp
+              </a>
+            )}
           </div>
         )}
         <p>
@@ -157,15 +174,11 @@ function LeadDetail() {
         </p>
         {statusError && <p className="error">{statusError}</p>}
         {lead.status !== 'CONVERTED' && (
-          <p>
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={() => setEnrollmentModalOpen(true)}
-            >
+          <div className="mt-4">
+            <button type="button" className="btn-primary" onClick={() => setEnrollmentModalOpen(true)}>
               Convert to Student
             </button>
-          </p>
+          </div>
         )}
       </section>
 
@@ -176,7 +189,7 @@ function LeadDetail() {
           onSuccess={(data) => {
             fetchLead()
             if (data.enrollmentNumber) {
-              alert(`Enrolled successfully. Enrollment number: ${data.enrollmentNumber}`)
+              toast.success(`Enrolled. Enrollment number: ${data.enrollmentNumber}`)
             }
             if (data.studentId) {
               navigate(`/students/${data.studentId}`)
@@ -186,32 +199,33 @@ function LeadDetail() {
       )}
 
       <section className="card">
-        <h3>Activities</h3>
-        <div className="note-input">
+        <h3 className="text-lg font-semibold text-slate-900">Activities</h3>
+        <div className="mb-4 flex flex-col gap-2">
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Add a note or call summary..."
+            className="min-h-[80px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
           />
-          <div className="note-actions">
-            <button type="button" onClick={addNote} disabled={!note.trim()}>
+          <div className="flex gap-2">
+            <button type="button" className="btn-secondary" onClick={addNote} disabled={!note.trim()}>
               Add Note
             </button>
-            <button type="button" onClick={addCallLog} disabled={!note.trim()}>
+            <button type="button" className="btn-secondary" onClick={addCallLog} disabled={!note.trim()}>
               Log call
             </button>
           </div>
         </div>
-        {activities.length === 0 && <p>No activities yet.</p>}
+        {activities.length === 0 && <p className="text-sm text-slate-500">No activities yet.</p>}
         {activities.length > 0 && (
-          <ul className="timeline">
+          <ul className="list-none border-l-2 border-green-200 pl-4 space-y-3">
             {activities.map((act) => (
-              <li key={act.id}>
-                <div>
-                  <strong>{act.activity_type}</strong>{' '}
-                  <span>{formatDateTime(act.created_at)}</span>
+              <li key={act.id} className="text-sm">
+                <div className="text-slate-500">
+                  <strong className="text-slate-700">{act.activity_type}</strong>{' '}
+                  {formatDateTime(act.created_at)}
                 </div>
-                {act.description && <p>{act.description}</p>}
+                {act.description && <p className="mt-1 text-slate-900">{act.description}</p>}
               </li>
             ))}
           </ul>

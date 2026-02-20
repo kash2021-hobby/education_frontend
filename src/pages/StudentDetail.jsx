@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { API_BASE } from '../config'
 import { formatDate, formatDateTime } from '../utils/date'
+import { toast } from 'sonner'
+import { ArrowLeft, Mail, MessageCircle } from 'lucide-react'
+import { CardSkeleton } from '../components/Skeleton'
+import { studentStatusBadge } from '../utils/badges'
 
 function StudentDetail() {
   const { id } = useParams()
@@ -10,7 +14,6 @@ function StudentDetail() {
   const [batches, setBatches] = useState([])
   const [attendance, setAttendance] = useState(null)
   const [exams, setExams] = useState([])
-  const [telegramLink, setTelegramLink] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [editMode, setEditMode] = useState(false)
@@ -104,37 +107,16 @@ function StudentDetail() {
       .catch(() => {})
   }, [id])
 
-  async function handleConnectTelegram() {
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/telegram/connect-link`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId: id }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to generate link')
-      if (data.url) {
-        setTelegramLink(data.url)
-        await navigator.clipboard.writeText(data.url)
-        alert('Link copied to clipboard. Send it to the student so they can connect their Telegram.')
-      }
-    } catch (e) {
-      alert(e.message)
-    }
-  }
-
   async function handlePayInstallmentSubmit(inst) {
     if (!id || !inst) return
 
     const amount = Number(inst.amount_due || 0)
     if (!amount || Number.isNaN(amount) || amount <= 0) {
-      // eslint-disable-next-line no-alert
-      alert('Installment amount is invalid, cannot mark as paid.')
+      toast.error('Installment amount is invalid, cannot mark as paid.')
       return
     }
     if (!payTxRef || !payTxRef.trim()) {
-      // eslint-disable-next-line no-alert
-      alert('Transaction reference is required.')
+      toast.error('Transaction reference is required.')
       return
     }
 
@@ -167,11 +149,9 @@ function StudentDetail() {
         .catch(() => {})
       setPayingInstallmentId(null)
       setPayTxRef('')
-      // eslint-disable-next-line no-alert
-      alert('Payment recorded and installment marked as PAID.')
+      toast.success('Payment recorded and installment marked as PAID.')
     } catch (e) {
-      // eslint-disable-next-line no-alert
-      alert(e.message)
+      toast.error(e.message)
     } finally {
       setPaySaving(false)
     }
@@ -207,40 +187,78 @@ function StudentDetail() {
     }
   }
 
-  if (loading) return <p>Loading student...</p>
+  if (loading) return <CardSkeleton lines={8} />
   if (error) {
     return (
-      <div className="page">
-        <p className="error">{error} <button type="button" onClick={fetchStudent} className="retry-btn">Retry</button></p>
+      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        {error} <button type="button" onClick={fetchStudent} className="btn-link ml-2">Retry</button>
       </div>
     )
   }
-  if (!student) return <p>Student not found.</p>
+  if (!student) return <p className="text-slate-600">Student not found.</p>
 
   const s = student.student || student
   const payments = student.payments || []
 
-  return (
-    <div className="page">
-      <button type="button" onClick={() => navigate('/students')}>
-        ← Back to Students
-      </button>
+  const phoneDigits = (s.lead_phone || '').replace(/\D/g, '')
+  const whatsappUrl = phoneDigits ? `https://wa.me/${phoneDigits}` : null
+  const mailtoUrl = s.lead_email ? `mailto:${s.lead_email}` : null
 
-      <h2>Student Detail</h2>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => navigate('/students')}
+          className="btn-ghost flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Students
+        </button>
+      </div>
+      <h2 className="text-2xl font-semibold text-slate-900">Student Detail</h2>
 
       <section className="card">
-        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3>Profile</h3>
-          <button
-            type="button"
-            className="btn-link"
-            onClick={() => {
-              setEditError('')
-              setEditMode((v) => !v)
-            }}
-          >
-            {editMode ? 'Cancel' : 'Edit'}
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h3 className="text-lg font-semibold text-slate-900">Profile</h3>
+          <div className="flex items-center gap-2">
+            {(whatsappUrl || mailtoUrl) && !editMode && (
+              <>
+                {whatsappUrl && (
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary inline-flex items-center gap-2"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
+                  </a>
+                )}
+                {mailtoUrl && (
+                  <a
+                    href={mailtoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary inline-flex items-center gap-2"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </a>
+                )}
+              </>
+            )}
+            <button
+              type="button"
+              className="btn-link"
+              onClick={() => {
+                setEditError('')
+                setEditMode((v) => !v)
+              }}
+            >
+              {editMode ? 'Cancel' : 'Edit'}
+            </button>
+          </div>
         </div>
 
         {!editMode && (
@@ -267,7 +285,8 @@ function StudentDetail() {
               <strong>Course:</strong> {s.course_name} ({s.course_code})
             </p>
             <p>
-              <strong>Status:</strong> {s.status}
+              <strong>Status:</strong>{' '}
+              <span className={`badge ${studentStatusBadge(s.status)}`}>{s.status}</span>
             </p>
             <p>
               <strong>Enrollment date:</strong> {formatDate(s.enrollment_date)}
@@ -545,22 +564,7 @@ function StudentDetail() {
         )}
       </section>
 
-      <section className="card">
-        <h3>Telegram</h3>
-        <p>
-          <button type="button" className="btn-primary" onClick={handleConnectTelegram}>
-            Generate connect link
-          </button>
-          {' '}
-          Send the link to the student so they can link their Telegram account.
-        </p>
-        {telegramLink && (
-          <p className="small">
-            Link: <a href={telegramLink} target="_blank" rel="noopener noreferrer">{telegramLink}</a>
-          </p>
-        )}
-      </section>
-    </div>
+      </div>
   )
 }
 

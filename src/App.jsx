@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import './App.css'
+import { Toaster } from 'sonner'
 import ProtectedLayout from './components/ProtectedLayout.jsx'
 import AuthLayout from './components/AuthLayout.jsx'
 import HomeDashboard from './pages/HomeDashboard.jsx'
@@ -18,6 +18,7 @@ import Register from './pages/Register.jsx'
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" richColors closeButton />
       <Routes>
         <Route
           path="/login"

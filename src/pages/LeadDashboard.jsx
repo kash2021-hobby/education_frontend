@@ -1,9 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../api'
 import { formatDateTime } from '../utils/date'
+import { TableSkeleton } from '../components/Skeleton'
+import { leadStatusBadge } from '../utils/badges'
+import { useSearch } from '../contexts/SearchContext'
+import { UserPlus, RefreshCw, LayoutGrid, ExternalLink } from 'lucide-react'
+import clsx from 'clsx'
 
 function LeadDashboard() {
+  const { searchValue } = useSearch()
   const [searchParams, setSearchParams] = useSearchParams()
   const statusFromUrl = searchParams.get('status') || ''
   const assignedToFromUrl = searchParams.get('assignedTo') || ''
@@ -84,6 +90,17 @@ function LeadDashboard() {
     setSearchParams(next)
   }
 
+  const filteredLeads = useMemo(() => {
+    const q = (searchValue || '').trim().toLowerCase()
+    if (!q) return leads
+    return leads.filter(
+      (l) =>
+        (l.full_name || '').toLowerCase().includes(q) ||
+        (l.email || '').toLowerCase().includes(q) ||
+        (l.phone_number || '').toLowerCase().includes(q)
+    )
+  }, [leads, searchValue])
+
   async function handleIngest(e) {
     e.preventDefault()
     if (!ingestForm.email?.trim() && !ingestForm.phone_number?.trim()) {
@@ -128,11 +145,14 @@ function LeadDashboard() {
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>Leads</h2>
-        <div className="filters">
-          <Link to="/leads/board">Board view</Link>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Leads</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to="/leads/board" className="btn-secondary flex min-h-[44px] items-center gap-2 no-underline">
+            <LayoutGrid className="h-4 w-4" />
+            Board view
+          </Link>
           <select
             value={statusFilter}
             onChange={(e) => {
@@ -141,6 +161,7 @@ function LeadDashboard() {
               setPage(1)
               updateUrlFilters(v, assignedToFilter)
             }}
+            className="min-h-[44px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
           >
             <option value="">All statuses</option>
             <option value="NEW">NEW</option>
@@ -158,6 +179,7 @@ function LeadDashboard() {
               setPage(1)
               updateUrlFilters(statusFilter, v)
             }}
+            className="min-h-[44px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
           >
             <option value="">All assignees</option>
             {users.map((u) => (
@@ -167,76 +189,110 @@ function LeadDashboard() {
           <select
             value={pageSize}
             onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+            className="min-h-[44px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
           >
             <option value={10}>10 per page</option>
             <option value={20}>20 per page</option>
             <option value={50}>50 per page</option>
           </select>
-          <button type="button" onClick={() => setIngestModalOpen(true)} className="btn-primary">
+          <button type="button" onClick={() => setIngestModalOpen(true)} className="btn-primary flex min-h-[44px] items-center gap-2">
+            <UserPlus className="h-4 w-4" />
             Add lead
           </button>
-          <button type="button" onClick={fetchLeads}>
+          <button type="button" onClick={fetchLeads} className="btn-secondary flex min-h-[44px] items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
             Refresh
           </button>
         </div>
       </div>
 
-      {loading && <p>Loading leads...</p>}
+      {loading && <TableSkeleton rows={10} cols={8} />}
       {error && (
-        <p className="error">
-          {error}
-          <button type="button" onClick={fetchLeads} className="retry-btn">Retry</button>
-        </p>
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error} <button type="button" onClick={fetchLeads} className="btn-link ml-2">Retry</button>
+        </div>
       )}
 
-      {!loading && !error && leads.length === 0 && <p>No leads found. Relax or check your filters.</p>}
+      {!loading && !error && leads.length === 0 && (
+        <p className="text-sm text-slate-500">No leads found. Relax or check your filters.</p>
+      )}
 
-      {!loading && leads.length > 0 && (
+      {!loading && leads.length > 0 && filteredLeads.length === 0 && searchValue?.trim() && (
+        <p className="text-sm text-slate-500">No leads match &quot;{searchValue.trim()}&quot;. Try a different search.</p>
+      )}
+
+      {!loading && leads.length > 0 && (filteredLeads.length > 0 || !searchValue?.trim()) && (
         <>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Status</th>
-                <th>Source</th>
-                <th>Counselor</th>
-                <th>Created</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {leads.map((lead) => (
-                <tr key={lead.id}>
-                  <td>{lead.full_name}</td>
-                  <td>{lead.email}</td>
-                  <td>{lead.phone_number}</td>
-                  <td>{lead.status}</td>
-                  <td>{lead.source}</td>
-                  <td>{lead.counselor_name || '—'}</td>
-                  <td>{formatDateTime(lead.created_at)}</td>
-                  <td>
-                    <Link to={`/leads/${lead.id}`}>Open</Link>
-                  </td>
+          {/* Mobile: card list */}
+          <div className="space-y-3 md:hidden">
+            {filteredLeads.map((lead) => (
+              <div
+                key={lead.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-slate-900">{lead.full_name}</p>
+                  <span className={clsx('mt-1 inline-block', 'badge', leadStatusBadge(lead.status))}>
+                    {lead.status}
+                  </span>
+                </div>
+                <Link
+                  to={`/leads/${lead.id}`}
+                  className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg text-green-600 hover:bg-green-50"
+                >
+                  <ExternalLink className="h-5 w-5" />
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:block">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/80">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Source</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Counselor</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Created</th>
+                  <th className="w-20 px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="pagination">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
+              </thead>
+              <tbody>
+                {filteredLeads.map((lead, idx) => (
+                  <tr
+                    key={lead.id}
+                    className={clsx('border-b border-slate-100 last:border-0', idx % 2 === 1 && 'bg-slate-50/50')}
+                  >
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900">{lead.full_name}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{lead.email}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{lead.phone_number}</td>
+                    <td className="px-4 py-3">
+                      <span className={clsx('badge', leadStatusBadge(lead.status))}>{lead.status}</span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{lead.source}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{lead.counselor_name || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{formatDateTime(lead.created_at)}</td>
+                    <td className="px-4 py-3">
+                      <Link to={`/leads/${lead.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-green-600 hover:underline">
+                        <ExternalLink className="h-4 w-4" />
+                        Open
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex min-h-[44px] items-center gap-4">
+            <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="btn-secondary min-h-[44px] disabled:opacity-50">
               Previous
             </button>
-            <span>Page {page} of {total === 0 ? 1 : Math.ceil(total / pageSize)}</span>
-            <button
-              type="button"
-              disabled={total > 0 && page >= Math.ceil(total / pageSize)}
-              onClick={() => setPage((p) => p + 1)}
-            >
+            <span className="text-sm text-slate-600">Page {page} of {total === 0 ? 1 : Math.ceil(total / pageSize)}</span>
+            <button type="button" disabled={total > 0 && page >= Math.ceil(total / pageSize)} onClick={() => setPage((p) => p + 1)} className="btn-secondary min-h-[44px] disabled:opacity-50">
               Next
             </button>
           </div>
@@ -251,8 +307,8 @@ function LeadDashboard() {
               <button type="button" className="modal-close" onClick={() => setIngestModalOpen(false)}>×</button>
             </div>
             <form onSubmit={handleIngest}>
-              <p className="small">At least one of email or phone is required.</p>
-              {ingestMessage && <p className={ingestError ? 'error' : ''}>{ingestMessage}</p>}
+              <p className="mb-4 text-sm text-slate-500">At least one of email or phone is required.</p>
+              {ingestMessage && <p className={ingestError ? 'mb-4 text-sm text-red-600' : 'mb-4 text-sm text-emerald-600'}>{ingestMessage}</p>}
               <div className="form-group">
                 <label>Name</label>
                 <input
@@ -321,8 +377,8 @@ function LeadDashboard() {
                 </select>
               </div>
               <div className="modal-actions">
-                <button type="button" onClick={() => setIngestModalOpen(false)}>Cancel</button>
-                <button type="submit" disabled={ingestSubmitting}>
+                <button type="button" onClick={() => setIngestModalOpen(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" disabled={ingestSubmitting} className="btn-primary">
                   {ingestSubmitting ? 'Adding…' : 'Add lead'}
                 </button>
               </div>

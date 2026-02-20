@@ -19,8 +19,8 @@ export function leadStatusBadge(status) {
 export function studentStatusBadge(status) {
   if (!status) return ''
   const s = String(status).toLowerCase()
-  const map = { active: 'badge-active', dropped: 'badge-dropped', alumni: 'badge-alumni' }
-  return map[s] || ''
+  const map = { active: 'badge-active', dropped: 'badge-dropped', completed: 'badge-completed', alumni: 'badge-alumni' }
+  return map[s] || 'badge-completed'
 }
 
 export function batchStatusBadge(status) {

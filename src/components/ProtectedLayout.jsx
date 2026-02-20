@@ -1,40 +1,51 @@
-import { Navigate, Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { getAuthToken, clearAuthToken } from '../auth'
+import { useState } from 'react'
+import { Navigate, Outlet } from 'react-router-dom'
+import { getAuthToken } from '../auth'
+import { SearchProvider, useSearch } from '../contexts/SearchContext.jsx'
+import Sidebar from './Sidebar.jsx'
+import AppHeader from './AppHeader.jsx'
+import PageTransition from './PageTransition.jsx'
+import BottomNav from './BottomNav.jsx'
+import clsx from 'clsx'
 
-function ProtectedLayout() {
-  const token = getAuthToken()
-  const navigate = useNavigate()
-
-  function handleLogout() {
-    clearAuthToken()
-    navigate('/login')
-  }
-
-  if (!token) {
-    return <Navigate to="/login" replace />
-  }
+function ProtectedLayoutInner() {
+  const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const { searchValue, setSearchValue } = useSearch()
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <h1>Education CRM</h1>
-        <nav>
-          <NavLink to="/" end>Dashboard</NavLink>
-          <NavLink to="/leads">Leads</NavLink>
-          <NavLink to="/students">Students</NavLink>
-          <NavLink to="/batches">Batches</NavLink>
-          <NavLink to="/attendance">Attendance</NavLink>
-          <NavLink to="/courses">Courses</NavLink>
-          <button type="button" onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
-        </nav>
-      </header>
-      <main className="app-main">
-        <Outlet />
-      </main>
+    <div className="min-h-screen bg-white">
+      <Sidebar
+        isMobileOpen={sidebarMobileOpen}
+        onCloseMobile={() => setSidebarMobileOpen(false)}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
+      />
+      <div className={clsx('transition-[padding] duration-300', 'pl-0', sidebarCollapsed ? 'md:pl-[72px] lg:pl-[72px]' : 'md:pl-64')}>
+        <AppHeader
+          onMenuClick={() => setSidebarMobileOpen(true)}
+          searchValue={searchValue}
+          onSearchChange={setSearchValue}
+        />
+        <main className="px-4 pb-24 pt-4 md:px-6 md:pb-6 md:pt-6">
+          <PageTransition className="mx-auto max-w-7xl">
+            <Outlet />
+          </PageTransition>
+        </main>
+      </div>
+      <BottomNav />
     </div>
   )
 }
 
-export default ProtectedLayout
+export default function ProtectedLayout() {
+  const token = getAuthToken()
+  if (!token) {
+    return <Navigate to="/login" replace />
+  }
+  return (
+    <SearchProvider>
+      <ProtectedLayoutInner />
+    </SearchProvider>
+  )
+}
