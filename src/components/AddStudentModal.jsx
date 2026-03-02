@@ -136,36 +136,55 @@ function AddStudentModal({ onClose, onSuccess }) {
               </div>
               <div className="form-group">
                 <label>Courses and batches</label>
-                <p className="small" style={{ marginBottom: '0.5rem' }}>Select one or more courses, then choose a batch for each. Leave batch as Auto to use first with seats.</p>
-                <div className="course-checkboxes" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {courses.filter((c) => c.is_active !== false).map((c) => (
-                    <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedCourseIds.includes(c.id)}
-                          onChange={() => toggleCourse(c.id)}
-                        />
-                        <span>{c.name} ({c.code})</span>
-                      </label>
-                      {selectedCourseIds.includes(c.id) && (
-                        <div style={{ marginLeft: '1.5rem' }}>
-                          <label className="small">Batch</label>
-                          <select
-                            value={batchForCourse[c.id] || ''}
-                            onChange={(e) => setBatchForCourseId(c.id, e.target.value || null)}
-                            style={{ marginTop: '0.25rem', minWidth: '200px' }}
-                          >
-                            <option value="">Auto (first with seats)</option>
-                            {batchesForCourse(c.id).map((b) => (
-                              <option key={b.id} value={b.id}>{b.name} (seats: {b.current_enrollment ?? 0}/{b.max_seats ?? 0})</option>
-                            ))}
-                            {batchesForCourse(c.id).length === 0 && <option value="" disabled>No batches</option>}
-                          </select>
+                <p className="small mb-2">
+                  Select one or more courses, then choose a batch for each. Leave batch as Auto to use first with
+                  seats.
+                </p>
+                <div className="flex flex-col gap-2">
+                  {courses
+                    .filter((c) => c.is_active !== false)
+                    .map((c) => {
+                      const checked = selectedCourseIds.includes(c.id)
+                      return (
+                        <div
+                          key={c.id}
+                          className={`rounded-xl border px-3 py-2 text-sm shadow-sm transition-colors ${
+                            checked
+                              ? 'border-green-500 bg-green-50'
+                              : 'border-slate-200 bg-white hover:bg-slate-50'
+                          }`}
+                        >
+                          <label className="flex cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+                              checked={checked}
+                              onChange={() => toggleCourse(c.id)}
+                            />
+                            <span className="font-medium text-slate-900">{c.name}</span>
+                            <span className="text-xs text-slate-500">({c.code})</span>
+                          </label>
+                          {checked && (
+                            <div className="mt-2 pl-6">
+                              <label className="small">Batch</label>
+                              <select
+                                value={batchForCourse[c.id] || ''}
+                                onChange={(e) => setBatchForCourseId(c.id, e.target.value || null)}
+                                className="mt-1 min-h-[44px] min-w-[200px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                              >
+                                <option value="">Auto (first with seats)</option>
+                                {batchesForCourse(c.id).map((b) => (
+                                  <option key={b.id} value={b.id}>
+                                    {b.name} (seats: {b.current_enrollment ?? 0}/{b.max_seats ?? 0})
+                                  </option>
+                                ))}
+                                {batchesForCourse(c.id).length === 0 && <option value="" disabled>No batches</option>}
+                              </select>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      )
+                    })}
                 </div>
               </div>
               <div className="form-group">

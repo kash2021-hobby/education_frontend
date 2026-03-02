@@ -9,9 +9,11 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
+  Bell,
 } from 'lucide-react'
 import { useState } from 'react'
 import clsx from 'clsx'
+import { NOTIFICATION_APP_URL } from '../config'
 
 const navItems = [
   { to: '/', end: true, label: 'Dashboard', icon: LayoutDashboard },
@@ -20,6 +22,7 @@ const navItems = [
   { to: '/batches', end: false, label: 'Batches', icon: FolderOpen },
   { to: '/attendance', end: false, label: 'Attendance', icon: CalendarCheck },
   { to: '/courses', end: false, label: 'Courses', icon: BookOpen },
+  ...(NOTIFICATION_APP_URL ? [{ to: NOTIFICATION_APP_URL, external: true, label: 'Notifications', icon: Bell }] : []),
 ]
 
 export default function Sidebar({ isMobileOpen, onCloseMobile, collapsed, onCollapsedChange }) {
@@ -70,18 +73,37 @@ export default function Sidebar({ isMobileOpen, onCloseMobile, collapsed, onColl
           </button>
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-          {navItems.map(({ to, end, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={linkClass}
-              onClick={() => onCloseMobile?.()}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              {(!isCollapsed || !isMobileOpen) && <span className="truncate">{label}</span>}
-            </NavLink>
-          ))}
+          {navItems.map((item) => {
+            const { to, label, icon: Icon } = item
+            const end = item.end ?? false
+            if (item.external) {
+              return (
+                <a
+                  key={to}
+                  href={to}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => onCloseMobile?.()}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {(!isCollapsed || !isMobileOpen) && <span className="truncate">{label}</span>}
+                </a>
+              )
+            }
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={linkClass}
+                onClick={() => onCloseMobile?.()}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                {(!isCollapsed || !isMobileOpen) && <span className="truncate">{label}</span>}
+              </NavLink>
+            )
+          })}
         </nav>
       </aside>
     </>

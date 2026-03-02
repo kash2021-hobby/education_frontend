@@ -97,30 +97,41 @@ function EnrollmentModal({ leadId, onClose, onSuccess }) {
                 <label>Courses (select one or more)</label>
                 {courses.length === 0 && <p className="small">No courses found.</p>}
                 {courses.length > 0 && (
-                  <div className="checkbox-list">
+                  <div className="flex flex-col gap-2">
                     {courses.map((c) => {
                       const checked = selectedCourseIds.includes(c.id)
                       return (
-                        <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) => {
-                              setError('')
-                              setSelectedCourseIds((prev) => {
-                                if (e.target.checked) {
-                                  return [...prev, c.id]
-                                }
-                                const next = prev.filter((id) => id !== c.id)
-                                const copy = { ...batchForCourse }
-                                delete copy[c.id]
-                                setBatchForCourse(copy)
-                                return next
-                              })
-                            }}
-                          />
-                          <span>{c.name} ({c.code})</span>
-                        </label>
+                        <div
+                          key={c.id}
+                          className={`rounded-xl border px-3 py-2 text-sm shadow-sm transition-colors ${
+                            checked
+                              ? 'border-green-500 bg-green-50'
+                              : 'border-slate-200 bg-white hover:bg-slate-50'
+                          }`}
+                        >
+                          <label className="flex cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+                              checked={checked}
+                              onChange={(e) => {
+                                setError('')
+                                setSelectedCourseIds((prev) => {
+                                  if (e.target.checked) {
+                                    return [...prev, c.id]
+                                  }
+                                  const next = prev.filter((id) => id !== c.id)
+                                  const copy = { ...batchForCourse }
+                                  delete copy[c.id]
+                                  setBatchForCourse(copy)
+                                  return next
+                                })
+                              }}
+                            />
+                            <span className="font-medium text-slate-900">{c.name}</span>
+                            <span className="text-xs text-slate-500">({c.code})</span>
+                          </label>
+                        </div>
                       )
                     })}
                   </div>

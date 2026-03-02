@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, GraduationCap, Users, MoreHorizontal, FolderOpen, CalendarCheck, BookOpen } from 'lucide-react'
+import { LayoutDashboard, GraduationCap, Users, MoreHorizontal, FolderOpen, CalendarCheck, BookOpen, Bell } from 'lucide-react'
 import { useState } from 'react'
 import clsx from 'clsx'
+import { NOTIFICATION_APP_URL } from '../config'
 
 const mainNavItems = [
   { to: '/', end: true, label: 'Dashboard', icon: LayoutDashboard },
@@ -13,6 +14,7 @@ const moreNavItems = [
   { to: '/batches', end: false, label: 'Batches', icon: FolderOpen },
   { to: '/attendance', end: false, label: 'Attendance', icon: CalendarCheck },
   { to: '/courses', end: false, label: 'Courses', icon: BookOpen },
+  ...(NOTIFICATION_APP_URL ? [{ to: NOTIFICATION_APP_URL, external: true, label: 'Notifications', icon: Bell }] : []),
 ]
 
 export default function BottomNav() {
@@ -45,22 +47,40 @@ export default function BottomNav() {
           <p className="text-sm font-semibold text-slate-900">More</p>
         </div>
         <nav className="max-h-[60vh] overflow-y-auto p-2">
-          {moreNavItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                clsx(
-                  'flex min-h-[48px] items-center gap-3 rounded-xl px-4 py-3 text-slate-700',
-                  isActive ? 'bg-green-50 text-green-700 font-medium' : 'hover:bg-slate-50'
-                )
-              }
-              onClick={() => setMoreOpen(false)}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              {label}
-            </NavLink>
-          ))}
+          {moreNavItems.map((item) => {
+            const { to, label, icon: Icon } = item
+            if (item.external) {
+              return (
+                <a
+                  key={to}
+                  href={to}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-h-[48px] items-center gap-3 rounded-xl px-4 py-3 text-slate-700 hover:bg-slate-50"
+                  onClick={() => setMoreOpen(false)}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {label}
+                </a>
+              )
+            }
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  clsx(
+                    'flex min-h-[48px] items-center gap-3 rounded-xl px-4 py-3 text-slate-700',
+                    isActive ? 'bg-green-50 text-green-700 font-medium' : 'hover:bg-slate-50'
+                  )
+                }
+                onClick={() => setMoreOpen(false)}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                {label}
+              </NavLink>
+            )
+          })}
         </nav>
       </div>
 

@@ -4,7 +4,7 @@ import EnrollmentModal from '../components/EnrollmentModal'
 import { API_BASE } from '../config'
 import { formatDateTime } from '../utils/date'
 import { toast } from 'sonner'
-import { ArrowLeft, Phone, Mail, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, MessageCircle, Check } from 'lucide-react'
 import { CardSkeleton } from '../components/Skeleton'
 
 function LeadDetail() {
@@ -17,6 +17,10 @@ function LeadDetail() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [statusError, setStatusError] = useState('')
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [interestedFollowUpOpen, setInterestedFollowUpOpen] = useState(false)
+  const [followUpComment, setFollowUpComment] = useState('')
+  const [followUpDate, setFollowUpDate] = useState('')
   const [enrollmentModalOpen, setEnrollmentModalOpen] = useState(false)
 
   async function fetchLead() {
@@ -71,12 +75,64 @@ function LeadDetail() {
     }
   }
 
+  function handleUpdateStatusClick() {
+    if (status === 'INTERESTED') {
+      setFollowUpComment('')
+      setFollowUpDate('')
+      setInterestedFollowUpOpen(true)
+      return
+    }
+    updateStatus()
+  }
+
+  async function submitInterestedFollowUp(e) {
+    e?.preventDefault()
+    const comment = followUpComment?.trim()
+    if (!comment) {
+      toast.error('Please add a comment.')
+      return
+    }
+    if (!followUpDate) {
+      toast.error('Please select the next follow-up date.')
+      return
+    }
+    setStatusError('')
+    setUpdatingStatus(true)
+    try {
+      const desc = `Next follow-up: ${followUpDate}. ${comment}`
+      await addActivity('NOTE', desc)
+      const res = await fetch(`${API_BASE}/api/v1/leads/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || 'Failed to update status')
+      }
+      toast.success('Status updated with follow-up')
+      setInterestedFollowUpOpen(false)
+      setFollowUpComment('')
+      setFollowUpDate('')
+      fetchLead()
+    } catch (e) {
+      setStatusError(e.message)
+      toast.error(e.message)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
   async function updateStatus() {
     setStatusError('')
+    setUpdatingStatus(true)
     try {
       if (status === 'REJECTED') {
         const reason = window.prompt('Reason for rejection? (optional)')
-        if (reason === null) return
+        if (reason === null) {
+          setUpdatingStatus(false)
+          return
+        }
         if (reason.trim()) {
           await addActivity('NOTE', `Rejection reason: ${reason.trim()}`)
         }
@@ -90,9 +146,13 @@ function LeadDetail() {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error || 'Failed to update status')
       }
+      toast.success('Status updated')
       fetchLead()
     } catch (e) {
       setStatusError(e.message)
+      toast.error(e.message)
+    } finally {
+      setUpdatingStatus(false)
     }
   }
 
@@ -158,21 +218,92 @@ function LeadDetail() {
         <p>
           <strong>Source:</strong> {lead.source}
         </p>
-        <p>
-          <strong>Status:</strong>{' '}
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="NEW">NEW</option>
-            <option value="CONTACTED">CONTACTED</option>
-            <option value="INTERESTED">INTERESTED</option>
-            <option value="COLD">COLD</option>
-            <option value="REJECTED">REJECTED</option>
-            <option value="LOST">LOST</option>
-          </select>
-          <button type="button" onClick={updateStatus}>
-            Update
-          </button>
-        </p>
-        {statusError && <p className="error">{statusError}</p>}
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+          <label className="mb-2 block text-sm font-medium text-slate-700">Status</label>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="min-h-[44px] min-w-[180px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm transition-colors focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+            >
+              <option value="NEW">NEW</option>
+              <option value="CONTACTED">CONTACTED</option>
+              <option value="INTERESTED">INTERESTED</option>
+              <option value="COLD">COLD</option>
+              <option value="REJECTED">REJECTED</option>
+              <option value="LOST">LOST</option>
+            </select>
+            <button
+              type="button"
+              onClick={handleUpdateStatusClick}
+              disabled={updatingStatus}
+              className="btn-primary inline-flex min-h-[44px] shrink-0 items-center gap-2"
+            >
+              {updatingStatus ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              {updatingStatus ? 'Updating…' : 'Update status'}
+            </button>
+          </div>
+          {statusError && <p className="mt-2 text-sm text-red-600">{statusError}</p>}
+        </div>
+
+        {interestedFollowUpOpen && (
+          <div className="modal-overlay" onClick={() => !updatingStatus && setInterestedFollowUpOpen(false)}>
+            <div className="modal mt-4" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Add follow-up details</h3>
+                <button
+                  type="button"
+                  className="modal-close"
+                  onClick={() => !updatingStatus && setInterestedFollowUpOpen(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <p className="mb-4 text-sm text-slate-600">
+                For interested leads, please add a comment and next follow-up date.
+              </p>
+              <form onSubmit={submitInterestedFollowUp}>
+                <div className="form-group">
+                  <label>Comment</label>
+                  <textarea
+                    value={followUpComment}
+                    onChange={(e) => setFollowUpComment(e.target.value)}
+                    placeholder="e.g. Discussed course curriculum, will call back next week"
+                    required
+                    rows={3}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Next follow-up date</label>
+                  <input
+                    type="date"
+                    value={followUpDate}
+                    onChange={(e) => setFollowUpDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setInterestedFollowUpOpen(false)}
+                    disabled={updatingStatus}
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={updatingStatus}>
+                    {updatingStatus ? 'Updating…' : 'Update status'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {lead.status !== 'CONVERTED' && (
           <div className="mt-4">
             <button type="button" className="btn-primary" onClick={() => setEnrollmentModalOpen(true)}>
